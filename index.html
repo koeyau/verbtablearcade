@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APSW Verb Table Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --mario-red: #E52521;
+      --mario-blue: #00247D;
+      --mario-yellow: #FBD000;
+      --mario-green: #43B047;
+      --mario-brick: #B84B00;
+      --mario-sky-top: #0072ff;
+      --mario-sky-bottom: #38b6ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px 20px 180px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      background: linear-gradient(to bottom, var(--mario-sky-top) 0%, var(--mario-sky-bottom) 70%, #29b6f6 100%);
+    }
+
+    /* --- MARIO BACKGROUND ELEMENTS --- */
+    .cloud {
+      position: absolute;
+      background: #FFF;
+      border-radius: 50px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      z-index: 1;
+      opacity: 0.9;
+    }
+    .cloud::before, .cloud::after {
+      content: '';
+      position: absolute;
+      background: #FFF;
+      border-radius: 50%;
+    }
+    .cloud1 { width: 140px; height: 40px; top: 40px; left: 8%; }
+    .cloud1::before { width: 50px; height: 50px; top: -25px; left: 20px; }
+    .cloud1::after { width: 40px; height: 40px; top: -15px; right: 25px; }
+
+    .cloud2 { width: 180px; height: 50px; top: 90px; right: 12%; }
+    .cloud2::before { width: 70px; height: 70px; top: -35px; left: 30px; }
+    .cloud2::after { width: 55px; height: 55px; top: -20px; right: 30px; }
+
+    .cloud3 { width: 120px; height: 35px; top: 220px; left: 2%; }
+    .cloud3::before { width: 45px; height: 45px; top: -20px; left: 15px; }
+    .cloud3::after { width: 35px; height: 35px; top: -12px; right: 15px; }
+
+    .hill {
+      position: absolute;
+      bottom: 120px;
+      background: linear-gradient(to right, #2ed573, #1e90ff);
+      background-color: #2ed573;
+      border-radius: 300px 300px 0 0;
+      border: 4px solid #0f7129;
+      border-bottom: none;
+      z-index: 2;
+    }
+    .hill-left { width: 260px; height: 130px; left: -40px; }
+    .hill-mid { width: 320px; height: 160px; right: 25%; }
+    .hill-right { width: 220px; height: 110px; right: -30px; }
+
+    .pipe {
+      position: absolute;
+      bottom: 120px;
+      width: 60px;
+      background: linear-gradient(90deg, #2ed573 0%, #7bed9f 40%, #2ed573 100%);
+      border: 3px solid #000;
+      z-index: 3;
+    }
+    .pipe::before {
+      content: '';
+      position: absolute;
+      top: -18px;
+      left: -6px;
+      width: 66px;
+      height: 18px;
+      background: linear-gradient(90deg, #2ed573 0%, #7bed9f 40%, #2ed573 100%);
+      border: 3px solid #000;
+      border-radius: 3px;
+    }
+    .pipe-1 { height: 70px; left: 18%; }
+    .pipe-2 { height: 100px; right: 15%; }
+
+    .ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      background-color: #d35400;
+      background-image: 
+        linear-gradient(335deg, #b03a2e 23px, transparent 23px),
+        linear-gradient(155deg, #e67e22 23px, transparent 23px),
+        linear-gradient(335deg, #b03a2e 23px, transparent 23px),
+        linear-gradient(155deg, #e67e22 23px, transparent 23px);
+      background-size: 58px 58px;
+      background-position: 0 2px, 4px 35px, 29px 31px, 34px 6px;
+      border-top: 6px solid #1e8449;
+      box-shadow: inset 0 10px 0 #2ecc71;
+      z-index: 4;
+    }
+
+    /* --- ARCADE CONTAINER & UI --- */
+    .arcade-container {
+      background: rgba(255, 255, 255, 0.96);
+      border: 6px solid #000;
+      border-radius: 20px;
+      box-shadow: 0 12px 0px rgba(0,0,0,0.3), 0 0 20px rgba(255, 255, 255, 0.8);
+      width: 100%;
+      max-width: 920px;
+      padding: 28px;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+      margin-top: 10px;
+    }
+
+    h1.title {
+      font-family: 'Press Start 2P', cursive;
+      color: var(--mario-red);
+      text-shadow: 3px 3px 0px #000, -2px -2px 0px var(--mario-yellow);
+      font-size: 1.6rem;
+      margin-top: 0;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: center;
+      background: #000;
+      color: #FFF;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+      border: 3px solid var(--mario-yellow);
+    }
+
+    .score-board span {
+      color: var(--mario-yellow);
+    }
+
+    .verb-table-container {
+      overflow-x: auto;
+      margin-bottom: 24px;
+    }
+
+    table.verb-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #FFF;
+      border: 4px solid #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table.verb-table th {
+      background: var(--mario-blue);
+      color: #FFF;
+      padding: 14px 10px;
+      font-size: 1.05rem;
+      border: 2px solid #000;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    table.verb-table td {
+      border: 2px solid #000;
+      padding: 18px 10px;
+      font-size: 1.2rem;
+      font-weight: 900;
+      width: 25%;
+    }
+
+    .target-cell {
+      background-color: #FFFDE7;
+      border: 4px dashed var(--mario-red) !important;
+      position: relative;
+    }
+
+    input.verb-input {
+      width: 92%;
+      padding: 10px;
+      font-size: 1.2rem;
+      font-weight: 900;
+      text-align: center;
+      border: 3px solid #000;
+      border-radius: 8px;
+      outline: none;
+      background: #FFF;
+      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input.verb-input:focus {
+      border-color: var(--mario-blue);
+      background-color: #E3F2FD;
+    }
+
+    /* TRY AGAIN IN-TABLE BADGE */
+    .try-again-badge {
+      display: none;
+      background: var(--mario-red);
+      color: #FFF;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 2px solid #000;
+      margin-bottom: 8px;
+      animation: pulse 0.8s infinite alternate;
+    }
+
+    /* Controls Bar */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-submit {
+      font-family: 'Press Start 2P', cursive;
+      background: var(--mario-green);
+      color: #FFF;
+      border: 4px solid #000;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-radius: 10px;
+      box-shadow: 4px 4px 0px #000;
+      transition: all 0.1s;
+    }
+
+    .btn-start-over {
+      font-family: 'Press Start 2P', cursive;
+      background: var(--mario-red);
+      color: #FFF;
+      border: 4px solid #000;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-radius: 10px;
+      box-shadow: 4px 4px 0px #000;
+      transition: all 0.1s;
+      display: none; /* Only visible on Game Over */
+    }
+
+    .btn-submit:hover, .btn-start-over:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-submit:active, .btn-start-over:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .pulse-highlight {
+      animation: pulse 1s infinite alternate;
+      border-color: var(--mario-yellow) !important;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px var(--mario-yellow); }
+      100% { transform: scale(1.08); box-shadow: 0 0 25px var(--mario-yellow); }
+    }
+
+    .feedback-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 1.15rem;
+      display: none;
+    }
+
+    .feedback-box.error {
+      display: block;
+      background: #FFEBEE;
+      border: 3px solid var(--mario-red);
+      color: #C62828;
+    }
+
+    .feedback-box.success {
+      display: block;
+      background: #E8F5E9;
+      border: 3px solid var(--mario-green);
+      color: #2E7D32;
+    }
+
+    .checklist-section {
+      margin-top: 32px;
+      background: #FFF8E1;
+      border: 4px solid var(--mario-brick);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: left;
+      box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+    }
+
+    .checklist-section h2 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.95rem;
+      color: var(--mario-brick);
+      margin-top: 0;
+      line-height: 1.4;
+    }
+
+    .checklist-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .checklist-item {
+      background: #FFF;
+      border: 2px solid #000;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+    }
+
+    .badge-count {
+      background: var(--mario-red);
+      color: #FFF;
+      border-radius: 50%;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mario Background Graphic Elements -->
+  <div class="cloud cloud1"></div>
+  <div class="cloud cloud2"></div>
+  <div class="cloud cloud3"></div>
+
+  <div class="hill hill-left"></div>
+  <div class="hill hill-mid"></div>
+  <div class="hill hill-right"></div>
+
+  <div class="pipe pipe-1"></div>
+  <div class="pipe pipe-2"></div>
+
+  <div class="ground"></div>
+
+  <!-- Main Arcade Cabinet -->
+  <div class="arcade-container">
+    <h1 class="title">⭐ APSW Verb Table Arcade ⭐</h1>
+
+    <div class="score-board">
+      <div>LIVES: <span id="lives">❤️❤️❤️</span></div>
+    </div>
+
+    <div class="verb-table-container">
+      <table class="verb-table">
+        <thead>
+          <tr>
+            <th>Present Tense</th>
+            <th>Present Participle</th>
+            <th>Past Tense</th>
+            <th>Past Participle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="col-0">run</td>
+            <td id="col-1">running</td>
+            <td id="col-2">ran</td>
+            <td id="col-3" class="target-cell"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-group">
+      <button id="submit-btn" class="btn-submit" onclick="checkAnswer()">SUBMIT [ENTER]</button>
+      <button id="start-over-btn" class="btn-start-over" onclick="initGame()">START OVER 🍄</button>
+    </div>
+
+    <div id="feedback" class="feedback-box"></div>
+
+    <!-- Checklist for commonly misspelt words -->
+    <div class="checklist-section">
+      <h2>🐢 Bowser's Misspelt Word Checklist</h2>
+      <p style="font-size: 0.9rem; margin: 6px 0 12px 0; color: #555;">
+        These are verbs you previously missed. Practice and master them to power up!
+      </p>
+      <div id="checklist-grid" class="checklist-grid">
+        <span style="color: #777; font-style: italic;">No mistakes recorded yet! Clear sailing ahead!</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // APSW Verb Table Database[cite: 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    const verbList = [
+      // A. Modal / Be (Corrected: Present tense is "be")[cite: 2, 8]
+      { present: "be", participle: "being", past: "was/were", pastParticiple: "been", validAnswers: ["be", "am", "is", "are"] },
+      { present: "have", participle: "having", past: "had", pastParticiple: "had" },
+      // B. Same form across all three[cite: 2]
+      { present: "cost", participle: "costing", past: "cost", pastParticiple: "cost" },
+      { present: "cut", participle: "cutting", past: "cut", pastParticiple: "cut" },
+      { present: "hit", participle: "hitting", past: "hit", pastParticiple: "hit" },
+      { present: "hurt", participle: "hurting", past: "hurt", pastParticiple: "hurt" },
+      { present: "put", participle: "putting", past: "put", pastParticiple: "put" },
+      { present: "read", participle: "reading", past: "read", pastParticiple: "read" },
+      { present: "shut", participle: "shutting", past: "shut", pastParticiple: "shut" },
+      // C. Same past & past participle[cite: 3, 4, 5, 6, 7]
+      { present: "bake", participle: "baking", past: "baked", pastParticiple: "baked" },
+      { present: "beg", participle: "begging", past: "begged", pastParticiple: "begged" },
+      { present: "bend", participle: "bending", past: "bent", pastParticiple: "bent" },
+      { present: "bring", participle: "bringing", past: "brought", pastParticiple: "brought" },
+      { present: "buy", participle: "buying", past: "bought", pastParticiple: "bought" },
+      { present: "catch", participle: "catching", past: "caught", pastParticiple: "caught" },
+      { present: "cry", participle: "crying", past: "cried", pastParticiple: "cried" },
+      { present: "dig", participle: "digging", past: "dug", pastParticiple: "dug" },
+      { present: "die", participle: "dying", past: "died", pastParticiple: "died" },
+      { present: "feel", participle: "feeling", past: "felt", pastParticiple: "felt" },
+      { present: "fight", participle: "fighting", past: "fought", pastParticiple: "fought" },
+      { present: "find", participle: "finding", past: "found", pastParticiple: "found" },
+      { present: "keep", participle: "keeping", past: "kept", pastParticiple: "kept" },
+      { present: "knit", participle: "knitting", past: "knitted", pastParticiple: "knitted" },
+      { present: "pay", participle: "paying", past: "paid", pastParticiple: "paid" },
+      { present: "say", participle: "saying", past: "said", pastParticiple: "said" },
+      { present: "sleep", participle: "sleeping", past: "slept", pastParticiple: "slept" },
+      { present: "teach", participle: "teaching", past: "taught", pastParticiple: "taught" },
+      { present: "think", participle: "thinking", past: "thought", pastParticiple: "thought" },
+      { present: "tie", participle: "tying", past: "tied", pastParticiple: "tied" },
+      { present: "win", participle: "winning", past: "won", pastParticiple: "won" },
+      // D. Different past & past participle[cite: 8, 9]
+      { present: "begin", participle: "beginning", past: "began", pastParticiple: "begun" },
+      { present: "bite", participle: "biting", past: "bit", pastParticiple: "bitten" },
+      { present: "break", participle: "breaking", past: "broke", pastParticiple: "broken" },
+      { present: "choose", participle: "choosing", past: "chose", pastParticiple: "chosen" },
+      { present: "do", participle: "doing", past: "did", pastParticiple: "done" },
+      { present: "drink", participle: "drinking", past: "drank", pastParticiple: "drunk" },
+      { present: "drive", participle: "driving", past: "drove", pastParticiple: "driven" },
+      { present: "eat", participle: "eating", past: "ate", pastParticiple: "eaten" },
+      { present: "fly", participle: "flying", past: "flew", pastParticiple: "flown" },
+      { present: "forget", participle: "forgetting", past: "forgot", pastParticiple: "forgotten" },
+      { present: "go", participle: "going", past: "went", pastParticiple: "gone" },
+      { present: "know", participle: "knowing", past: "knew", pastParticiple: "known" },
+      { present: "ride", participle: "riding", past: "rode", pastParticiple: "ridden" },
+      { present: "run", participle: "running", past: "ran", pastParticiple: "run" },
+      { present: "sing", participle: "singing", past: "sang", pastParticiple: "sung" },
+      { present: "swim", participle: "swimming", past: "swam", pastParticiple: "swum" },
+      { present: "write", participle: "writing", past: "wrote", pastParticiple: "written" }
+    ];
+
+    let currentQuestion = {};
+    let targetColIndex = 0;
+    let lives = 3;
+    let misspeltTracker = JSON.parse(localStorage.getItem('apsw_misspelt_words') || '{}');
+
+    function initGame() {
+      lives = 3;
+      
+      const submitBtn = document.getElementById('submit-btn');
+      const startOverBtn = document.getElementById('start-over-btn');
+      
+      submitBtn.style.display = 'inline-block';
+      submitBtn.disabled = false;
+
+      startOverBtn.style.display = 'none';
+      startOverBtn.classList.remove('pulse-highlight');
+
+      updateScoreboard();
+      renderChecklist();
+      loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+      let randomVerb;
+      do {
+        randomVerb = verbList[Math.floor(Math.random() * verbList.length)];
+      } while (verbList.length > 1 && currentQuestion.present === randomVerb.present);
+
+      targetColIndex = Math.floor(Math.random() * 4);
+      currentQuestion = randomVerb;
+
+      const keys = ['present', 'participle', 'past', 'pastParticiple'];
+
+      for (let i = 0; i < 4; i++) {
+        const cell = document.getElementById(`col-${i}`);
+        cell.classList.remove('target-cell');
+
+        if (i === targetColIndex) {
+          cell.classList.add('target-cell');
+          cell.innerHTML = `
+            <div id="try-again-tag" class="try-again-badge">⚠️ TRY AGAIN!</div>
+            <input type="text" id="user-input" class="verb-input" placeholder="[ ___ ]" autocomplete="off" autofocus />
+          `;
+        } else {
+          cell.textContent = randomVerb[keys[i]];
+        }
+      }
+
+      document.getElementById('feedback').className = 'feedback-box';
+      document.getElementById('feedback').style.display = 'none';
+
+      bindInputListener();
+    }
+
+    function bindInputListener() {
+      const inputEl = document.getElementById('user-input');
+      if (inputEl) {
+        inputEl.disabled = false;
+        inputEl.focus();
+        inputEl.onkeypress = function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            checkAnswer();
+          }
+        };
+      }
+    }
+
+    function checkAnswer() {
+      const inputEl = document.getElementById('user-input');
+      if (!inputEl) return;
+
+      const userAnswer = inputEl.value.trim().toLowerCase();
+      const keys = ['present', 'participle', 'past', 'pastParticiple'];
+      const correctAnswer = currentQuestion[keys[targetColIndex]].toLowerCase();
+
+      // Check if user answer matches target or alternate acceptable options
+      let isCorrect = (userAnswer === correctAnswer);
+      if (currentQuestion.validAnswers && targetColIndex === 0) {
+        isCorrect = currentQuestion.validAnswers.includes(userAnswer);
+      }
+      if (correctAnswer.includes('/') && correctAnswer.split('/').map(s => s.trim()).includes(userAnswer)) {
+        isCorrect = true;
+      }
+
+      const feedbackEl = document.getElementById('feedback');
+      const tryAgainTag = document.getElementById('try-again-tag');
+
+      if (isCorrect) {
+        // Correct Answer -> Advance to next question
+        if (tryAgainTag) tryAgainTag.style.display = 'none';
+
+        updateScoreboard();
+
+        feedbackEl.className = 'feedback-box success';
+        feedbackEl.innerHTML = '🌟 Super! You got it right! Moving to next stage...';
+        
+        setTimeout(() => {
+          loadNextQuestion();
+        }, 1200);
+
+      } else {
+        // Incorrect Answer -> Deduct 1 life & track mistake
+        lives--;
+        const verbKey = currentQuestion.present;
+        misspeltTracker[verbKey] = (misspeltTracker[verbKey] || 0) + 1;
+        localStorage.setItem('apsw_misspelt_words', JSON.stringify(misspeltTracker));
+        
+        updateScoreboard();
+        renderChecklist();
+
+        const hint = generateGuidedHint(userAnswer, correctAnswer, targetColIndex);
+
+        if (lives <= 0) {
+          // Game Over State
+          if (tryAgainTag) tryAgainTag.style.display = 'none';
+          inputEl.disabled = true;
+          document.getElementById('submit-btn').style.display = 'none';
+          
+          const startOverBtn = document.getElementById('start-over-btn');
+          startOverBtn.style.display = 'inline-block';
+          startOverBtn.classList.add('pulse-highlight');
+          startOverBtn.focus();
+
+          feedbackEl.className = 'feedback-box error';
+          feedbackEl.innerHTML = `
+            💀 <strong>GAME OVER!</strong><br>
+            You used up all 3 lives! Click "START OVER" to restore your hearts! 🍄
+          `;
+        } else {
+          // Show "TRY AGAIN!" badge & hint banner
+          if (tryAgainTag) tryAgainTag.style.display = 'inline-block';
+
+          feedbackEl.className = 'feedback-box error';
+          feedbackEl.innerHTML = `⚠️ <strong>Try again!</strong> ${hint}`;
+
+          setTimeout(() => {
+            inputEl.disabled = false;
+            inputEl.focus();
+            inputEl.select();
+          }, 10);
+        }
+      }
+    }
+
+    function generateGuidedHint(userAns, correctAns, colIndex) {
+      if (!userAns) return "Type your answer in the yellow box!";
+
+      if (colIndex === 1) { // Present Participle (-ing)
+        if (correctAns.length > userAns.length && correctAns.slice(-3) === 'ing') {
+          if (correctAns.match(/(.)\1ing$/)) {
+            return "Remember to double the final consonant before adding '-ing'!";
+          }
+          if (!userAns.endsWith('ing')) {
+            return "Remember that Present Participle verbs usually end in '-ing'!";
+          }
+        }
+        if (userAns.includes('eing') && correctAns.endsWith('ing')) {
+          return "Remember to drop the silent 'e' before adding '-ing'!";
+        }
+      }
+
+      if (colIndex >= 2) { // Past Tenses
+        if (correctAns.endsWith('ied') && userAns.endsWith('yed')) {
+          return "Change the 'y' to 'i' before adding '-ed'!";
+        }
+        if (correctAns.match(/(.)\1ed$/) && !userAns.match(/(.)\1ed$/)) {
+          return "Remember to double the final consonant before adding '-ed'!";
+        }
+      }
+
+      if (userAns[0] !== correctAns[0]) {
+        return `The target word starts with '<strong>${correctAns[0].toUpperCase()}</strong>'.`;
+      }
+
+      return `The target word has ${correctAns.length} letters.`;
+    }
+
+    function updateScoreboard() {
+      let heartsHtml = '';
+      for (let i = 0; i < 3; i++) {
+        heartsHtml += (i < lives) ? '❤️' : '🖤';
+      }
+      document.getElementById('lives').innerHTML = heartsHtml;
+    }
+
+    function renderChecklist() {
+      const grid = document.getElementById('checklist-grid');
+      const keys = Object.keys(misspeltTracker);
+
+      if (keys.length === 0) {
+        grid.innerHTML = '<span style="color: #777; font-style: italic;">No mistakes recorded yet! Clear sailing ahead!</span>';
+        return;
+      }
+
+      keys.sort((a, b) => misspeltTracker[b] - misspeltTracker[a]);
+
+      grid.innerHTML = keys.map(word => `
+        <div class="checklist-item">
+          <span>${word}</span>
+          <span class="badge-count">${misspeltTracker[word]}x</span>
+        </div>
+      `).join('');
+    }
+
+    window.onload = initGame;
+  </script>
+</body>
+</html>
